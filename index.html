@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🍌 Банановый кликер</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #1a1a2e;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            padding: 15px;
+        }
+
+        /* ОБЩЕЕ ОКНО */
+        .window {
+            background: #16213e;
+            border-radius: 40px;
+            padding: 25px 20px;
+            max-width: 460px;
+            width: 100%;
+            max-height: 95vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+            border: 2px solid #0f3460;
+        }
+
+        /* ЭКРАН ВХОДА */
+        .login-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: white;
+        }
+        .login-box h1 {
+            font-size: 38px;
+            margin-bottom: 15px;
+        }
+        .login-box input {
+            width: 100%;
+            padding: 14px;
+            margin: 6px 0;
+            border: none;
+            border-radius: 40px;
+            background: #0f3460;
+            color: white;
+            font-size: 18px;
+            text-align: center;
+            outline: none;
+        }
+        .login-box input::placeholder {
+            color: #aaa;
+        }
+        .login-box button {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 40px;
+            background: #f1c40f;
+            color: #16213e;
+            font-size: 22px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 12px;
+            transition: 0.2s;
+        }
+        .login-box button:active {
+            transform: scale(0.96);
+            background: #e67e22;
+        }
+        .error {
+            color: #e74c3c;
+            font-size: 15px;
+            margin-top: 10px;
+            min-height: 22px;
+        }
+
+        /* ИГРА */
+        .game-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+        .banana {
+            font-size: 160px;  /* 👈 УМЕНЬШИЛ БАНАН */
+            cursor: pointer;
+            user-select: none;
+            line-height: 1.2;
+            transition: transform 0.1s;
+        }
+        .banana:active {
+            transform: scale(0.90);
+        }
+        .counter {
+            font-size: 48px;
+            font-weight: bold;
+            color: #f1c40f;
+            margin: 2px 0;
+        }
+        .multiplier-info {
+            font-size: 20px;
+            color: #555;
+            margin: 2px 0 8px 0;
+        }
+        .user-label {
+            font-size: 18px;
+            color: #555;
+            margin-top: 2px;
+        }
+        .shop {
+            background: white;
+            padding: 15px;
+            border-radius: 25px;
+            width: 100%;
+            margin-top: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .shop h2 {
+            text-align: center;
+            color: #333;
+            font-size: 22px;
+            margin-top: 0;
+            margin-bottom: 8px;
+        }
+        .shop-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 4px;
+            border-bottom: 1px solid #eee;
+        }
+        .shop-item:last-child {
+            border-bottom: none;
+        }
+        .shop-item .name {
+            font-weight: bold;
+            color: #333;
+            font-size: 15px;
+        }
+        .shop-item .price {
+            color: #f1c40f;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .shop-item button {
+            padding: 6px 16px;
+            border: none;
+            border-radius: 30px;
+            background: #f1c40f;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .shop-item button:active {
+            transform: scale(0.95);
+            background: #e67e22;
+        }
+        .shop-item button:disabled {
+            background: #ccc;
+            color: #666;
+            cursor: not-allowed;
+        }
+        .reset-btn {
+            margin-top: 12px;
+            padding: 10px 30px;
+            border: none;
+            border-radius: 40px;
+            background: #e74c3c;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .reset-btn:active {
+            transform: scale(0.95);
+        }
+        #message {
+            font-size: 16px;
+            margin: 8px 0 4px 0;
+            padding: 8px;
+            border-radius: 18px;
+            background: rgba(0,0,0,0.04);
+            min-height: 35px;
+            text-align: center;
+            color: #333;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ОКНО -->
+    <div class="window">
+
+        <!-- ВХОД -->
+        <div class="login-box" id="loginBox">
+            <h1>🍌 ВХОД</h1>
+            <input type="text" id="loginInput" placeholder="Логин">
+            <input type="password" id="passwordInput" placeholder="Пароль">
+            <button id="loginBtn">Войти</button>
+            <div class="error" id="errorMsg"></div>
+        </div>
+
+        <!-- ИГРА -->
+        <div class="game-container" id="gameContainer">
+            <div class="banana" id="banana">🍌</div>
+            <div class="counter" id="counter">0</div>
+            <div class="multiplier-info" id="multiplierInfo">Множитель: ×1</div>
+            <div class="user-label" id="userLabel">Игрок: —</div>
+            <div id="message"></div>
+
+            <div class="shop">
+                <h2>🏪 МАГАЗИН</h2>
+                <div id="shopItems"></div>
+            </div>
+
+            <button class="reset-btn" id="resetBtn">🔄 Сбросить прогресс</button>
+        </div>
+
+    </div>
+
+    <script>
+        // СПИСОК УЛУЧШЕНИЙ
+        const upgradesData = [
+            { id: 0, name: "Обычный кликер", multiplier: 1, price: 0 },
+            { id: 1, name: "Серебряный триггер", multiplier: 2, price: 500 },
+            { id: 2, name: "Золотой кликер", multiplier: 3, price: 1500 },
+            { id: 3, name: "Платиновый кликер", multiplier: 5, price: 4000 },
+            { id: 4, name: "Алмазный кликер", multiplier: 8, price: 10000 },
+            { id: 5, name: "Изумрудный кликер", multiplier: 12, price: 25000 },
+            { id: 6, name: "Космический кликер", multiplier: 20, price: 60000 },
+            { id: 7, name: "Галактический кликер", multiplier: 35, price: 150000 },
+            { id: 8, name: "Вселенский кликер", multiplier: 60, price: 400000 },
+            { id: 9, name: "Абсолютный кликер", multiplier: 100, price: 1000000 }
+        ];
+
+        // ПОЛЬЗОВАТЕЛИ
+        const users = {
+            "Buntager": { password: "fyqnuq-Pasmab-4revca", bananas: 0, currentUpgrade: 0 },
+            "Makar": { password: "1234567", bananas: 1000, currentUpgrade: 3 }
+        };
+
+        // ЭЛЕМЕНТЫ
+        const loginInput = document.getElementById('loginInput');
+        const passwordInput = document.getElementById('passwordInput');
+        const loginBtn = document.getElementById('loginBtn');
+        const errorMsg = document.getElementById('errorMsg');
+        const loginBox = document.getElementById('loginBox');
+        const gameContainer = document.getElementById('gameContainer');
+        const userLabel = document.getElementById('userLabel');
+        const counterElement = document.getElementById('counter');
+        const bananaElement = document.getElementById('banana');
+        const multiplierInfo = document.getElementById('multiplierInfo');
+        const shopItemsContainer = document.getElementById('shopItems');
+        const resetBtn = document.getElementById('resetBtn');
+        const messageEl = document.getElementById('message');
+
+        let currentUser = null;
+        let currentUserData = null;
+
+        function showMessage(text, isError = false) {
+            messageEl.textContent = text;
+            messageEl.style.color = isError ? '#e74c3c' : '#333';
+            setTimeout(() => { messageEl.textContent = ''; }, 3000);
+        }
+
+        function doLogin() {
+            const login = loginInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            if (!login || !password) {
+                errorMsg.textContent = 'Заполни оба поля!';
+                return;
+            }
+
+            if (users[login] && users[login].password === password) {
+                currentUser = login;
+                currentUserData = users[login];
+                loginBox.style.display = 'none';
+                gameContainer.style.display = 'flex';
+                userLabel.textContent = 'Игрок: ' + login;
+                updateUI();
+                startGame();
+                loginInput.value = '';
+                passwordInput.value = '';
+                errorMsg.textContent = '';
+            } else {
+                errorMsg.textContent = '❌ Неверный логин или пароль!';
+                loginInput.value = '';
+                passwordInput.value = '';
+            }
+        }
+
+        loginBtn.addEventListener('click', doLogin);
+        passwordInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
+        loginInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
+
+        function updateUI() {
+            counterElement.textContent = currentUserData.bananas;
+            const upgrade = upgradesData[currentUserData.currentUpgrade];
+            multiplierInfo.textContent = 'Множитель: ×' + upgrade.multiplier;
+            renderShop();
+        }
+
+        function addBananas(amount) {
+            currentUserData.bananas += amount;
+            updateUI();
+        }
+
+        function buyUpgrade(upgradeId) {
+            const upgrade = upgradesData[upgradeId];
+            const currentId = currentUserData.currentUpgrade;
+
+            if (upgradeId !== currentId + 1) {
+                showMessage('Сначала купи предыдущее улучшение!', true);
+                return;
+            }
+
+            if (currentUserData.bananas < upgrade.price) {
+                showMessage('Не хватает бананов! Нужно: ' + upgrade.price, true);
+                return;
+            }
+
+            currentUserData.bananas -= upgrade.price;
+            currentUserData.currentUpgrade = upgradeId;
+            updateUI();
+            showMessage('🎉 Ты купил: ' + upgrade.name + '!');
+        }
+
+        function renderShop() {
+            const currentId = currentUserData.currentUpgrade;
+            const nextId = currentId + 1;
+            let html = '';
+
+            if (nextId < upgradesData.length) {
+                const upgrade = upgradesData[nextId];
+                const canAfford = currentUserData.bananas >= upgrade.price;
+                html += `
+                            <div class="shop-item">
+                                <div>
+                                    <div class="name">${upgrade.name}</div>
+                                    <div class="price">💰 ${upgrade.price} бананов</div>
+                                    <div style="font-size:13px;color:#888;">Множитель: ×${upgrade.multiplier}</div>
+                                </div>
+                                <button onclick="buyUpgrade(${upgrade.id})" ${!canAfford ? 'disabled' : ''}>
+                                    Купить
+                                </button>
+                            </div>
+                        `;
+            } else {
+                html = '<p style="text-align:center;color:#888;font-size:16px;padding:8px 0;">🏆 Ты достиг максимума!</p>';
+            }
+
+            shopItemsContainer.innerHTML = html;
+        }
+
+        function resetGame() {
+            if (confirm('Точно сбросить прогресс?')) {
+                currentUserData.bananas = 0;
+                currentUserData.currentUpgrade = 0;
+                updateUI();
+                showMessage('Прогресс сброшен!');
+            }
+        }
+
+        function startGame() {
+            bananaElement.addEventListener('click', function() {
+                const upgrade = upgradesData[currentUserData.currentUpgrade];
+                addBananas(upgrade.multiplier);
+            });
+
+            resetBtn.addEventListener('click', resetGame);
+        }
+    </script>
+</body>
+</html>
