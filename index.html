@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🍌 Банановый кликер</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #1a1a2e;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .window {
+            background: #16213e;
+            border-radius: 50px;
+            padding: 40px 30px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+            border: 2px solid #0f3460;
+            color: white;
+            text-align: center;
+        }
+        .banana { font-size: 180px; cursor: pointer; user-select: none; transition: transform 0.1s; }
+        .banana:active { transform: scale(0.90); }
+        .counter { font-size: 52px; font-weight: bold; color: #f1c40f; margin: 10px 0; }
+        .multiplier-info { font-size: 22px; color: #aaa; margin: 5px 0; }
+        input {
+            width: 100%;
+            padding: 18px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 50px;
+            background: #0f3460;
+            color: white;
+            font-size: 20px;
+            text-align: center;
+        }
+        button {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 50px;
+            background: #f1c40f;
+            color: #16213e;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button:active { transform: scale(0.95); background: #e67e22; }
+        .error { color: #e74c3c; font-size: 16px; margin-top: 10px; }
+        .shop {
+            background: white;
+            padding: 15px;
+            border-radius: 25px;
+            margin-top: 15px;
+            color: #333;
+        }
+        .shop-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .shop-item button { width: auto; padding: 8px 20px; font-size: 14px; }
+        .shop-item button:disabled { background: #ccc; color: #666; cursor: not-allowed; }
+        #message { margin-top: 10px; padding: 10px; border-radius: 15px; background: rgba(255,255,255,0.05); min-height: 40px; text-align: center; }
+        .reset-btn { margin-top: 15px; background: #e74c3c; color: white; }
+        #gameContainer { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="window" id="loginBox">
+        <h1>🍌 ВХОД</h1>
+        <input type="text" id="loginInput" placeholder="Логин">
+        <input type="password" id="passwordInput" placeholder="Пароль">
+        <button id="loginBtn">Войти</button>
+        <div class="error" id="errorMsg"></div>
+        <div id="message" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="window" id="gameContainer">
+        <div class="banana" id="banana">🍌</div>
+        <div class="counter" id="counter">0</div>
+        <div class="multiplier-info" id="multiplierInfo">Множитель: ×1</div>
+        <div id="userLabel" style="color:#aaa;">Игрок: —</div>
+        <div class="shop">
+            <h2>🏪 МАГАЗИН</h2>
+            <div id="shopItems"></div>
+        </div>
+        <button class="reset-btn" id="resetBtn">🔄 Сбросить прогресс</button>
+        <div id="message" style="margin-top:10px;"></div>
+    </div>
+
+    <script>
+        // ============================================================
+        // НАСТРОЙКА СЕРВЕРА (ТВОЯ ССЫЛКА)
+        // ============================================================
+        const SERVER_URL = 'https://burmalda-production.up.railway.app';
+
+        // ============================================================
+        // ДАННЫЕ ИГРЫ
+        // ============================================================
+        const upgradesData = [
+            { id: 0, name: "Обычный кликер", multiplier: 1, price: 0 },
+            { id: 1, name: "Серебряный триггер", multiplier: 2, price: 500 },
+            { id: 2, name: "Золотой кликер", multiplier: 3, price: 1500 },
+            { id: 3, name: "Платиновый кликер", multiplier: 5, price: 4000 },
+            { id: 4, name: "Алмазный кликер", multiplier: 8, price: 10000 },
+            { id: 5, name: "Изумрудный кликер", multiplier: 12, price: 25000 },
+            { id: 6, name: "Космический кликер", multiplier: 20, price: 60000 },
+            { id: 7, name: "Галактический кликер", multiplier: 35, price: 150000 },
+            { id: 8, name: "Вселенский кликер", multiplier: 60, price: 400000 },
+            { id: 9, name: "Абсолютный кликер", multiplier: 100, price: 1000000 }
+        ];
+
+        let currentUser = null;
+        let currentUserData = { bananas: 0, upgrade_level: 0 };
+
+        // ============================================================
+        // РАБОТА С СЕРВЕРОМ
+        // ============================================================
+        async function loadPlayer(login, password) {
+            try {
+                const response = await fetch(`${SERVER_URL}/auth`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ login, password })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    return data.data;
+                } else {
+                    showMessage(data.error || 'Ошибка входа', true);
+                    return null;
+                }
+            } catch (error) {
+                showMessage('Ошибка подключения к серверу!', true);
+                return null;
+            }
+        }
+
+        async function savePlayer(login, bananas, upgrade_level) {
+            try {
+                await fetch(`${SERVER_URL}/save`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ login, bananas, upgrade_level })
+                });
+            } catch (error) {
+                showMessage('Ошибка сохранения!', true);
+            }
+        }
+
+        // ============================================================
+        // ЛОГИКА ВХОДА
+        // ============================================================
+        const loginInput = document.getElementById('loginInput');
+        const passwordInput = document.getElementById('passwordInput');
+        const loginBtn = document.getElementById('loginBtn');
+        const errorMsg = document.getElementById('errorMsg');
+        const loginBox = document.getElementById('loginBox');
+        const gameContainer = document.getElementById('gameContainer');
+        const userLabel = document.getElementById('userLabel');
+        const counterElement = document.getElementById('counter');
+        const bananaElement = document.getElementById('banana');
+        const multiplierInfo = document.getElementById('multiplierInfo');
+        const shopItemsContainer = document.getElementById('shopItems');
+        const resetBtn = document.getElementById('resetBtn');
+        const messageEl = document.getElementById('message');
+
+        function showMessage(text, isError = false) {
+            messageEl.textContent = text;
+            messageEl.style.color = isError ? '#e74c3c' : '#aaa';
+            setTimeout(() => { messageEl.textContent = ''; }, 3000);
+        }
+
+        async function doLogin() {
+            const login = loginInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            if (!login || !password) {
+                errorMsg.textContent = 'Введи логин и пароль!';
+                return;
+            }
+
+            const player = await loadPlayer(login, password);
+            if (!player) {
+                errorMsg.textContent = '❌ Неверный логин или пароль!';
+                return;
+            }
+
+            currentUser = login;
+            currentUserData = player;
+
+            loginBox.style.display = 'none';
+            gameContainer.style.display = 'block';
+            userLabel.textContent = 'Игрок: ' + login;
+            updateUI();
+            startGame();
+
+            loginInput.value = '';
+            passwordInput.value = '';
+            errorMsg.textContent = '';
+        }
+
+        loginBtn.addEventListener('click', doLogin);
+        passwordInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
+        loginInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
+
+        // ============================================================
+        // ИГРА
+        // ============================================================
+        function updateUI() {
+            counterElement.textContent = currentUserData.bananas;
+            const upgrade = upgradesData[currentUserData.upgrade_level];
+            multiplierInfo.textContent = 'Множитель: ×' + upgrade.multiplier;
+            renderShop();
+        }
+
+        async function addBananas(amount) {
+            currentUserData.bananas += amount;
+            updateUI();
+            await savePlayer(currentUser, currentUserData.bananas, currentUserData.upgrade_level);
+        }
+
+        async function buyUpgrade(upgradeId) {
+            const upgrade = upgradesData[upgradeId];
+            const currentId = currentUserData.upgrade_level;
+
+            if (upgradeId !== currentId + 1) {
+                showMessage('Сначала купи предыдущее!', true);
+                return;
+            }
+
+            if (currentUserData.bananas < upgrade.price) {
+                showMessage('Не хватает бананов! Нужно: ' + upgrade.price, true);
+                return;
+            }
+
+            currentUserData.bananas -= upgrade.price;
+            currentUserData.upgrade_level = upgradeId;
+            updateUI();
+            await savePlayer(currentUser, currentUserData.bananas, currentUserData.upgrade_level);
+            showMessage('🎉 Ты купил: ' + upgrade.name + '!');
+        }
+
+        function renderShop() {
+            const currentId = currentUserData.upgrade_level;
+            const nextId = currentId + 1;
+            let html = '';
+
+            if (nextId < upgradesData.length) {
+                const upgrade = upgradesData[nextId];
+                const canAfford = currentUserData.bananas >= upgrade.price;
+                html += `<div class="shop-item">
+                            <div>
+                                <div class="name">${upgrade.name}</div>
+                                <div style="font-size:14px;color:#888;">💰 ${upgrade.price} бананов, ×${upgrade.multiplier}</div>
+                            </div>
+                            <button onclick="buyUpgrade(${upgrade.id})" ${!canAfford ? 'disabled' : ''}>
+                                Купить
+                            </button>
+                        </div>`;
+            } else {
+                html = '<p style="text-align:center;color:#888;">🏆 Ты достиг максимума!</p>';
+            }
+
+            shopItemsContainer.innerHTML = html;
+        }
+
+        async function resetGame() {
+            if (confirm('Точно сбросить прогресс?')) {
+                currentUserData.bananas = 0;
+                currentUserData.upgrade_level = 0;
+                updateUI();
+                await savePlayer(currentUser, currentUserData.bananas, currentUserData.upgrade_level);
+                showMessage('Прогресс сброшен!');
+            }
+        }
+
+        function startGame() {
+            bananaElement.addEventListener('click', function() {
+                const upgrade = upgradesData[currentUserData.upgrade_level];
+                addBananas(upgrade.multiplier);
+            });
+
+            resetBtn.addEventListener('click', resetGame);
+        }
+    </script>
+</body>
+</html>
