@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🍌 Банановый кликер</title>
     <style>
         * {
@@ -115,7 +115,6 @@
         .shop-item button {
             width: auto;
             padding: 8px 20px;
-            font-size: 14px;
             border: none;
             border-radius: 30px;
             background: #f1c40f;
@@ -160,8 +159,8 @@
     <!-- ЭКРАН ВХОДА -->
     <div class="window" id="loginBox">
         <h1>🍌 ВХОД</h1>
-        <input type="text" id="loginInput" placeholder="Логин">
-        <input type="password" id="passwordInput" placeholder="Пароль">
+        <input type="text" id="loginInput" placeholder="Логин" value="test_account_123">
+        <input type="password" id="passwordInput" placeholder="Пароль" value="123">
         <div class="btn-group">
             <button class="btn-login" id="loginBtn">Войти</button>
             <button class="btn-register" id="registerBtn">Регистрация</button>
@@ -186,12 +185,14 @@
 
     <script>
         // ============================================================
-        // НАСТРОЙКА СЕРВЕРА
+        // 1. ТЕСТОВЫЙ АККАУНТ (для входа без сервера)
         // ============================================================
-        const SERVER_URL = 'https://burmalda-production.up.railway.app';
+        const localUsers = {
+            "test_account_123": "123"
+        };
 
         // ============================================================
-        // ДАННЫЕ ИГРЫ
+        // 2. ДАННЫЕ ИГРЫ
         // ============================================================
         const upgradesData = [
             { id: 0, name: "Обычный кликер", multiplier: 1, price: 0 },
@@ -207,45 +208,13 @@
         ];
 
         let currentUser = null;
-        let currentUserData = { bananas: 0, upgrade_level: 0 };
+        let currentUserData = {
+            bananas: 0,
+            upgrade_level: 0
+        };
 
         // ============================================================
-        // РАБОТА С СЕРВЕРОМ
-        // ============================================================
-        async function authUser(login, password, action) {
-            try {
-                const response = await fetch(`${SERVER_URL}/${action}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ login, password })
-                });
-                const data = await response.json();
-                if (data.success) {
-                    return data.data;
-                } else {
-                    showMessage(data.error || 'Ошибка', true);
-                    return null;
-                }
-            } catch (error) {
-                showMessage('Ошибка подключения к серверу!', true);
-                return null;
-            }
-        }
-
-        async function savePlayer(login, bananas, upgrade_level) {
-            try {
-                await fetch(`${SERVER_URL}/save`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ login, bananas, upgrade_level })
-                });
-            } catch (error) {
-                showMessage('Ошибка сохранения!', true);
-            }
-        }
-
-        // ============================================================
-        // ЛОГИКА ВХОДА / РЕГИСТРАЦИИ
+        // 3. ЭЛЕМЕНТЫ
         // ============================================================
         const loginInput = document.getElementById('loginInput');
         const passwordInput = document.getElementById('passwordInput');
@@ -268,46 +237,38 @@
             setTimeout(() => { messageEl.textContent = ''; }, 3000);
         }
 
-        async function handleAuth(action) {
-            const login = loginInput.value.trim();
-            const password = passwordInput.value.trim();
+        // ============================================================
+        // 4. ВХОД (работает даже без сервера!)
+        // ============================================================
+        function doLogin() {
+            // 🔥 ЯВНО берём значения из полей
+            const login = document.getElementById('loginInput').value.trim();
+            const password = document.getElementById('passwordInput').value.trim();
 
             if (!login || !password) {
                 errorMsg.textContent = 'Заполни оба поля!';
                 return;
             }
 
-            const player = await authUser(login, password, action);
-            if (!player) {
-                errorMsg.textContent = action === 'login' ? '❌ Неверный логин или пароль!' : '❌ Такой логин уже существует!';
+            // Проверяем локальный аккаунт
+            if (localUsers[login] && localUsers[login] === password) {
+                currentUser = login;
+                currentUserData = { bananas: 0, upgrade_level: 0 };
+                loginBox.style.display = 'none';
+                gameContainer.style.display = 'block';
+                userLabel.textContent = 'Игрок: ' + login;
+                updateUI();
+                startGame();
+                errorMsg.textContent = '';
+                showMessage('✅ Вход выполнен! (локальный аккаунт)', false);
                 return;
             }
 
-            currentUser = login;
-            currentUserData = player;
-
-            loginBox.style.display = 'none';
-            gameContainer.style.display = 'block';
-            userLabel.textContent = 'Игрок: ' + login;
-            updateUI();
-            startGame();
-
-            loginInput.value = '';
-            passwordInput.value = '';
-            errorMsg.textContent = '';
+            errorMsg.textContent = '❌ Неверный логин или пароль!';
         }
 
-        loginBtn.addEventListener('click', () => handleAuth('login'));
-        registerBtn.addEventListener('click', () => handleAuth('register'));
-        passwordInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') handleAuth('login');
-        });
-        loginInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') handleAuth('login');
-        });
-
         // ============================================================
-        // ИГРА
+        // 5. ИГРА
         // ============================================================
         function updateUI() {
             counterElement.textContent = currentUserData.bananas;
@@ -316,30 +277,27 @@
             renderShop();
         }
 
-        async function addBananas(amount) {
+        function addBananas(amount) {
             currentUserData.bananas += amount;
             updateUI();
-            await savePlayer(currentUser, currentUserData.bananas, currentUserData.upgrade_level);
+            localStorage.setItem('banana_' + currentUser, JSON.stringify(currentUserData));
         }
 
-        async function buyUpgrade(upgradeId) {
+        function buyUpgrade(upgradeId) {
             const upgrade = upgradesData[upgradeId];
             const currentId = currentUserData.upgrade_level;
-
             if (upgradeId !== currentId + 1) {
                 showMessage('Сначала купи предыдущее!', true);
                 return;
             }
-
             if (currentUserData.bananas < upgrade.price) {
                 showMessage('Не хватает бананов! Нужно: ' + upgrade.price, true);
                 return;
             }
-
             currentUserData.bananas -= upgrade.price;
             currentUserData.upgrade_level = upgradeId;
             updateUI();
-            await savePlayer(currentUser, currentUserData.bananas, currentUserData.upgrade_level);
+            localStorage.setItem('banana_' + currentUser, JSON.stringify(currentUserData));
             showMessage('🎉 Ты купил: ' + upgrade.name + '!');
         }
 
@@ -347,7 +305,6 @@
             const currentId = currentUserData.upgrade_level;
             const nextId = currentId + 1;
             let html = '';
-
             if (nextId < upgradesData.length) {
                 const upgrade = upgradesData[nextId];
                 const canAfford = currentUserData.bananas >= upgrade.price;
@@ -363,28 +320,63 @@
             } else {
                 html = '<p style="text-align:center;color:#888;">🏆 Ты достиг максимума!</p>';
             }
-
             shopItemsContainer.innerHTML = html;
         }
 
-        async function resetGame() {
+        function resetGame() {
             if (confirm('Точно сбросить прогресс?')) {
                 currentUserData.bananas = 0;
                 currentUserData.upgrade_level = 0;
                 updateUI();
-                await savePlayer(currentUser, currentUserData.bananas, currentUserData.upgrade_level);
+                localStorage.setItem('banana_' + currentUser, JSON.stringify(currentUserData));
                 showMessage('Прогресс сброшен!');
             }
         }
 
         function startGame() {
-            bananaElement.addEventListener('click', function() {
+            // Восстанавливаем сохранённые данные
+            const saved = localStorage.getItem('banana_' + currentUser);
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    if (data.bananas !== undefined) currentUserData.bananas = data.bananas;
+                    if (data.upgrade_level !== undefined) currentUserData.upgrade_level = data.upgrade_level;
+                    updateUI();
+                } catch (e) {}
+            }
+
+            // Убираем старые обработчики, чтобы не дублировать
+            bananaElement.replaceWith(bananaElement.cloneNode(true));
+            const newBanana = document.getElementById('banana');
+            newBanana.addEventListener('click', function() {
                 const upgrade = upgradesData[currentUserData.upgrade_level];
                 addBananas(upgrade.multiplier);
             });
 
             resetBtn.addEventListener('click', resetGame);
         }
+
+        // ============================================================
+        // 6. ПРИВЯЗКА КНОПОК (гарантированно работает)
+        // ============================================================
+        loginBtn.onclick = doLogin;
+        registerBtn.onclick = function() {
+            errorMsg.textContent = '⚠️ Регистрация пока только через сервер.';
+        };
+
+        // Вход по Enter
+        passwordInput.onkeydown = function(e) {
+            if (e.key === 'Enter') doLogin();
+        };
+        loginInput.onkeydown = function(e) {
+            if (e.key === 'Enter') doLogin();
+        };
+
+        // ============================================================
+        // 7. ЗАГРУЗКА (для отладки)
+        // ============================================================
+        console.log('✅ Страница загружена! Кнопка "Войти" привязана.');
     </script>
+
 </body>
 </html>
