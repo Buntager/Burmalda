@@ -8,7 +8,7 @@ app.use(express.json());
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
+    ssl: { rejectUnauthorized: true }
 });
 
 (async () => {
@@ -27,6 +27,7 @@ app.post('/auth', async (req, res) => {
     if (!login || !password) {
         return res.status(400).json({ error: 'Введи логин и пароль!' });
     }
+
     const result = await pool.query('SELECT * FROM players WHERE login = $1', [login]);
     if (result.rows.length === 0) {
         await pool.query(
@@ -35,6 +36,7 @@ app.post('/auth', async (req, res) => {
         );
         return res.json({ success: true, data: { login, bananas: 0, upgrade_level: 0 } });
     }
+
     if (result.rows[0].password === password) {
         return res.json({
             success: true,
