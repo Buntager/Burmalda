@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🍌 Банановый кликер</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #1a1a2e;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        /* ОКНО ВХОДА НА ВЕСЬ ЭКРАН */
+        .login-box {
+            background: #16213e;
+            border-radius: 50px;
+            padding: 50px 30px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+            border: 2px solid #0f3460;
+            text-align: center;
+            color: white;
+        }
+        .login-box h1 {
+            font-size: 48px;
+            margin-bottom: 30px;
+        }
+        .login-box input {
+            width: 100%;
+            padding: 20px;
+            margin: 12px 0;
+            border: none;
+            border-radius: 50px;
+            background: #0f3460;
+            color: white;
+            font-size: 22px;
+            text-align: center;
+            outline: none;
+        }
+        .login-box input::placeholder {
+            color: #aaa;
+        }
+        .login-box button {
+            width: 100%;
+            padding: 20px;
+            border: none;
+            border-radius: 50px;
+            background: #f1c40f;
+            color: #16213e;
+            font-size: 26px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: 0.2s;
+        }
+        .login-box button:active {
+            transform: scale(0.96);
+            background: #e67e22;
+        }
+        .error {
+            color: #e74c3c;
+            font-size: 18px;
+            margin-top: 15px;
+            min-height: 30px;
+        }
+
+        /* ИГРА (внутри окна) */
+        .game-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            background: #16213e;
+            border-radius: 50px;
+            padding: 30px 25px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+            border: 2px solid #0f3460;
+        }
+        .banana {
+            font-size: 180px;
+            cursor: pointer;
+            user-select: none;
+            line-height: 1.2;
+            transition: transform 0.1s;
+        }
+        .banana:active {
+            transform: scale(0.90);
+        }
+        .counter {
+            font-size: 52px;
+            font-weight: bold;
+            color: #f1c40f;
+            margin: 5px 0;
+        }
+        .multiplier-info {
+            font-size: 22px;
+            color: #aaa;
+            margin: 5px 0 10px 0;
+        }
+        .user-label {
+            font-size: 20px;
+            color: #aaa;
+            margin-top: 5px;
+        }
+        .shop {
+            background: white;
+            padding: 18px;
+            border-radius: 30px;
+            width: 100%;
+            margin-top: 15px;
+        }
+        .shop h2 {
+            text-align: center;
+            color: #333;
+            font-size: 24px;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        .shop-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 4px;
+            border-bottom: 1px solid #eee;
+        }
+        .shop-item:last-child {
+            border-bottom: none;
+        }
+        .shop-item .name {
+            font-weight: bold;
+            color: #333;
+            font-size: 16px;
+        }
+        .shop-item .price {
+            color: #f1c40f;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .shop-item button {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 30px;
+            background: #f1c40f;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+        }
+        .shop-item button:active {
+            transform: scale(0.95);
+            background: #e67e22;
+        }
+        .shop-item button:disabled {
+            background: #ccc;
+            color: #666;
+            cursor: not-allowed;
+        }
+        .reset-btn {
+            margin-top: 15px;
+            padding: 12px 35px;
+            border: none;
+            border-radius: 40px;
+            background: #e74c3c;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        .reset-btn:active {
+            transform: scale(0.95);
+        }
+        #message {
+            font-size: 18px;
+            margin: 10px 0 5px 0;
+            padding: 10px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.05);
+            min-height: 40px;
+            text-align: center;
+            color: #ddd;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ЭКРАН ВХОДА (БОЛЬШОЙ) -->
+    <div class="login-box" id="loginBox">
+        <h1>🍌 ВХОД</h1>
+        <input type="text" id="loginInput" placeholder="Логин">
+        <input type="password" id="passwordInput" placeholder="Пароль">
+        <button id="loginBtn">Войти</button>
+        <div class="error" id="errorMsg"></div>
+    </div>
+
+    <!-- ИГРА -->
+    <div class="game-container" id="gameContainer">
+        <div class="banana" id="banana">🍌</div>
+        <div class="counter" id="counter">0</div>
+        <div class="multiplier-info" id="multiplierInfo">Множитель: ×1</div>
+        <div class="user-label" id="userLabel">Игрок: —</div>
+        <div id="message"></div>
+
+        <div class="shop">
+            <h2>🏪 МАГАЗИН</h2>
+            <div id="shopItems"></div>
+        </div>
+
+        <button class="reset-btn" id="resetBtn">🔄 Сбросить прогресс</button>
+    </div>
+
+    <script>
+        const upgradesData = [
+            { id: 0, name: "Обычный кликер", multiplier: 1, price: 0 },
+            { id: 1, name: "Серебряный триггер", multiplier: 2, price: 500 },
+            { id: 2, name: "Золотой кликер", multiplier: 3, price: 1500 },
+            { id: 3, name: "Платиновый кликер", multiplier: 5, price: 4000 },
+            { id: 4, name: "Алмазный кликер", multiplier: 8, price: 10000 },
+            { id: 5, name: "Изумрудный кликер", multiplier: 12, price: 25000 },
+            { id: 6, name: "Космический кликер", multiplier: 20, price: 60000 },
+            { id: 7, name: "Галактический кликер", multiplier: 35, price: 150000 },
+            { id: 8, name: "Вселенский кликер", multiplier: 60, price: 400000 },
+            { id: 9, name: "Абсолютный кликер", multiplier: 100, price: 1000000 }
+        ];
+        const users = {
+            "Buntager": { password: "fyqnuq-Pasmab-4revca", bananas: 0, currentUpgrade: 0 },
+            "Makar": { password: "1234567", bananas: 0, currentUpgrade: 0 }
+        };
+        const loginInput = document.getElementById('loginInput');
+        const passwordInput = document.getElementById('passwordInput');
+        const loginBtn = document.getElementById('loginBtn');
+        const errorMsg = document.getElementById('errorMsg');
+        const loginBox = document.getElementById('loginBox');
+        const gameContainer = document.getElementById('gameContainer');
+        const userLabel = document.getElementById('userLabel');
+        const counterElement = document.getElementById('counter');
+        const bananaElement = document.getElementById('banana');
+        const multiplierInfo = document.getElementById('multiplierInfo');
+        const shopItemsContainer = document.getElementById('shopItems');
+        const resetBtn = document.getElementById('resetBtn');
+        const messageEl = document.getElementById('message');
+        let currentUser = null;
+        let currentUserData = null;
+        function showMessage(text, isError = false) {
+            messageEl.textContent = text;
+            messageEl.style.color = isError ? '#e74c3c' : '#ddd';
+            setTimeout(() => { messageEl.textContent = ''; }, 3000);
+        }
+        function doLogin() {
+            const login = loginInput.value.trim();
+            const password = passwordInput.value.trim();
+            if (!login || !password) { errorMsg.textContent = 'Заполни оба поля!'; return; }
+            if (users[login] && users[login].password === password) {
+                currentUser = login;
+                currentUserData = users[login];
+                loginBox.style.display = 'none';
+                gameContainer.style.display = 'flex';
+                userLabel.textContent = 'Игрок: ' + login;
+                updateUI();
+                startGame();
+                loginInput.value = '';
+                passwordInput.value = '';
+                errorMsg.textContent = '';
+            } else {
+                errorMsg.textContent = '❌ Неверный логин или пароль!';
+                loginInput.value = '';
+                passwordInput.value = '';
+            }
+        }
+        loginBtn.addEventListener('click', doLogin);
+        passwordInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
+        loginInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
+        function updateUI() {
+            counterElement.textContent = currentUserData.bananas;
+            const upgrade = upgradesData[currentUserData.currentUpgrade];
+            multiplierInfo.textContent = 'Множитель: ×' + upgrade.multiplier;
+            renderShop();
+        }
+        function addBananas(amount) {
+            currentUserData.bananas += amount;
+            updateUI();
+        }
+        function buyUpgrade(upgradeId) {
+            const upgrade = upgradesData[upgradeId];
+            const currentId = currentUserData.currentUpgrade;
+            if (upgradeId !== currentId + 1) {
+                showMessage('Сначала купи предыдущее!', true);
+                return;
+            }
+            if (currentUserData.bananas < upgrade.price) {
+                showMessage('Не хватает бананов! Нужно: ' + upgrade.price, true);
+                return;
+            }
+            currentUserData.bananas -= upgrade.price;
+            currentUserData.currentUpgrade = upgradeId;
+            updateUI();
+            showMessage('🎉 Ты купил: ' + upgrade.name + '!');
+        }
+        function renderShop() {
+            const currentId = currentUserData.currentUpgrade;
+            const nextId = currentId + 1;
+            let html = '';
+            if (nextId < upgradesData.length) {
+                const upgrade = upgradesData[nextId];
+                const canAfford = currentUserData.bananas >= upgrade.price;
+                html += `<div class="shop-item">
+                            <div><div class="name">${upgrade.name}</div>
+                            <div class="price">💰 ${upgrade.price} бананов</div>
+                            <div style="font-size:14px;color:#888;">×${upgrade.multiplier}</div></div>
+                            <button onclick="buyUpgrade(${upgrade.id})" ${!canAfford ? 'disabled' : ''}>Купить</button>
+                        </div>`;
+            } else {
+                html = '<p style="text-align:center;color:#888;">🏆 Ты достиг максимума!</p>';
+            }
+            shopItemsContainer.innerHTML = html;
+        }
+        function resetGame() {
+            if (confirm('Точно сбросить прогресс?')) {
+                currentUserData.bananas = 0;
+                currentUserData.currentUpgrade = 0;
+                updateUI();
+                showMessage('Прогресс сброшен!');
+            }
+        }
+        function startGame() {
+            bananaElement.addEventListener('click', function() {
+                const upgrade = upgradesData[currentUserData.currentUpgrade];
+                addBananas(upgrade.multiplier);
+            });
+            resetBtn.addEventListener('click', resetGame);
+        }
+    </script>
+</body>
+</html>
