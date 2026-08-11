@@ -5,7 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🍌 Банановый кликер</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         body {
             background: #1a1a2e;
             display: flex;
@@ -21,15 +25,31 @@
             padding: 40px 30px;
             max-width: 500px;
             width: 100%;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
             border: 2px solid #0f3460;
             color: white;
             text-align: center;
         }
-        .banana { font-size: 180px; cursor: pointer; user-select: none; transition: transform 0.1s; }
-        .banana:active { transform: scale(0.90); }
-        .counter { font-size: 52px; font-weight: bold; color: #f1c40f; margin: 10px 0; }
-        .multiplier-info { font-size: 22px; color: #aaa; margin: 5px 0; }
+        .banana {
+            font-size: 180px;
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.1s;
+        }
+        .banana:active {
+            transform: scale(0.90);
+        }
+        .counter {
+            font-size: 52px;
+            font-weight: bold;
+            color: #f1c40f;
+            margin: 10px 0;
+        }
+        .multiplier-info {
+            font-size: 22px;
+            color: #aaa;
+            margin: 5px 0;
+        }
         input {
             width: 100%;
             padding: 18px;
@@ -41,20 +61,43 @@
             font-size: 20px;
             text-align: center;
         }
-        button {
-            width: 100%;
-            padding: 18px;
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .btn-group button {
+            flex: 1;
+            padding: 16px;
             border: none;
             border-radius: 50px;
-            background: #f1c40f;
-            color: #16213e;
-            font-size: 24px;
+            font-size: 20px;
             font-weight: bold;
             cursor: pointer;
             transition: 0.2s;
         }
-        button:active { transform: scale(0.95); background: #e67e22; }
-        .error { color: #e74c3c; font-size: 16px; margin-top: 10px; }
+        .btn-group button:active {
+            transform: scale(0.95);
+        }
+        .btn-login {
+            background: #f1c40f;
+            color: #16213e;
+        }
+        .btn-login:active {
+            background: #e67e22;
+        }
+        .btn-register {
+            background: #2ecc71;
+            color: #16213e;
+        }
+        .btn-register:active {
+            background: #27ae60;
+        }
+        .error {
+            color: #e74c3c;
+            font-size: 16px;
+            margin-top: 10px;
+        }
         .shop {
             background: white;
             padding: 15px;
@@ -69,24 +112,65 @@
             padding: 8px 0;
             border-bottom: 1px solid #eee;
         }
-        .shop-item button { width: auto; padding: 8px 20px; font-size: 14px; }
-        .shop-item button:disabled { background: #ccc; color: #666; cursor: not-allowed; }
-        #message { margin-top: 10px; padding: 10px; border-radius: 15px; background: rgba(255,255,255,0.05); min-height: 40px; text-align: center; }
-        .reset-btn { margin-top: 15px; background: #e74c3c; color: white; }
-        #gameContainer { display: none; }
+        .shop-item button {
+            width: auto;
+            padding: 8px 20px;
+            font-size: 14px;
+            border: none;
+            border-radius: 30px;
+            background: #f1c40f;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .shop-item button:disabled {
+            background: #ccc;
+            color: #666;
+            cursor: not-allowed;
+        }
+        #message {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            min-height: 40px;
+            text-align: center;
+        }
+        .reset-btn {
+            margin-top: 15px;
+            padding: 16px;
+            border: none;
+            border-radius: 50px;
+            background: #e74c3c;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+        }
+        .reset-btn:active {
+            transform: scale(0.95);
+        }
+        #gameContainer {
+            display: none;
+        }
     </style>
 </head>
 <body>
 
+    <!-- ЭКРАН ВХОДА -->
     <div class="window" id="loginBox">
         <h1>🍌 ВХОД</h1>
         <input type="text" id="loginInput" placeholder="Логин">
         <input type="password" id="passwordInput" placeholder="Пароль">
-        <button id="loginBtn">Войти</button>
+        <div class="btn-group">
+            <button class="btn-login" id="loginBtn">Войти</button>
+            <button class="btn-register" id="registerBtn">Регистрация</button>
+        </div>
         <div class="error" id="errorMsg"></div>
         <div id="message" style="margin-top:10px;"></div>
     </div>
 
+    <!-- ИГРА -->
     <div class="window" id="gameContainer">
         <div class="banana" id="banana">🍌</div>
         <div class="counter" id="counter">0</div>
@@ -102,7 +186,7 @@
 
     <script>
         // ============================================================
-        // НАСТРОЙКА СЕРВЕРА (ТВОЯ ССЫЛКА)
+        // НАСТРОЙКА СЕРВЕРА
         // ============================================================
         const SERVER_URL = 'https://burmalda-production.up.railway.app';
 
@@ -128,9 +212,9 @@
         // ============================================================
         // РАБОТА С СЕРВЕРОМ
         // ============================================================
-        async function loadPlayer(login, password) {
+        async function authUser(login, password, action) {
             try {
-                const response = await fetch(`${SERVER_URL}/auth`, {
+                const response = await fetch(`${SERVER_URL}/${action}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ login, password })
@@ -139,7 +223,7 @@
                 if (data.success) {
                     return data.data;
                 } else {
-                    showMessage(data.error || 'Ошибка входа', true);
+                    showMessage(data.error || 'Ошибка', true);
                     return null;
                 }
             } catch (error) {
@@ -161,11 +245,12 @@
         }
 
         // ============================================================
-        // ЛОГИКА ВХОДА
+        // ЛОГИКА ВХОДА / РЕГИСТРАЦИИ
         // ============================================================
         const loginInput = document.getElementById('loginInput');
         const passwordInput = document.getElementById('passwordInput');
         const loginBtn = document.getElementById('loginBtn');
+        const registerBtn = document.getElementById('registerBtn');
         const errorMsg = document.getElementById('errorMsg');
         const loginBox = document.getElementById('loginBox');
         const gameContainer = document.getElementById('gameContainer');
@@ -183,18 +268,18 @@
             setTimeout(() => { messageEl.textContent = ''; }, 3000);
         }
 
-        async function doLogin() {
+        async function handleAuth(action) {
             const login = loginInput.value.trim();
             const password = passwordInput.value.trim();
 
             if (!login || !password) {
-                errorMsg.textContent = 'Введи логин и пароль!';
+                errorMsg.textContent = 'Заполни оба поля!';
                 return;
             }
 
-            const player = await loadPlayer(login, password);
+            const player = await authUser(login, password, action);
             if (!player) {
-                errorMsg.textContent = '❌ Неверный логин или пароль!';
+                errorMsg.textContent = action === 'login' ? '❌ Неверный логин или пароль!' : '❌ Такой логин уже существует!';
                 return;
             }
 
@@ -212,9 +297,14 @@
             errorMsg.textContent = '';
         }
 
-        loginBtn.addEventListener('click', doLogin);
-        passwordInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
-        loginInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
+        loginBtn.addEventListener('click', () => handleAuth('login'));
+        registerBtn.addEventListener('click', () => handleAuth('register'));
+        passwordInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') handleAuth('login');
+        });
+        loginInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') handleAuth('login');
+        });
 
         // ============================================================
         // ИГРА
